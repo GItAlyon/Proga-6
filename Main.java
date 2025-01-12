@@ -12,6 +12,11 @@ abstract class Person {
     public abstract void display();
 }
 
+// Интерфейс Identifiable
+interface Identifiable {
+    String getId();
+}
+
 class Appearance {
     private String hairColor;
     private String clothes;
@@ -63,6 +68,22 @@ class Resident {
     public String getId() { return id; }
     public String getPhone() { return phone; }
     public Appearance getAppearance() { return appearance; }
+}
+
+// Производный класс VIPResident
+class VIPResident extends Resident {
+    private String vipPhone;
+
+    public VIPResident(String first, String last, String idNum, String hair, String cloth, String phoneNum, String vipPhone) {
+        super(); // Вызов конструктора базового класса
+        setResident(first, last, idNum, hair, cloth, phoneNum);
+        this.vipPhone = vipPhone;
+    }
+
+    public String getVipPhone() {
+        return vipPhone;
+    }
+
 }
 
 class VisitorPass {
