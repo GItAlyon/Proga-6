@@ -98,7 +98,21 @@ public:
     }
 };
 
+// Шаблон класса
+template <typename T>
+class Container {
+private:
+    std::vector<T> items;
 
+public:
+    void addItem(const T& item) {
+        items.push_back(item);
+    }
+
+    T getItem(int index) {
+        return items[index];
+    }
+};
 
 int main() {
     SetConsoleCP(1251);
@@ -116,6 +130,12 @@ int main() {
     // Используем производный класс
     VIPResident vipResident("Alice", "Johnson", "03", "Black", "Elegant", "555-1234", "Free Parking");
     vipResident.displayInfo();
+
+    // Демонстрация шаблона класса
+    Container<Resident> residentContainer;
+    residentContainer.addItem(resident1);
+    residentContainer.addItem(vipResident);
+    residentContainer.getItem(0).displayInfo(); // Вывод информации о первом жильце
 
     return 0;
 }
