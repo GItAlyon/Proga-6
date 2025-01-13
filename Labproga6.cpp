@@ -265,6 +265,7 @@ public:
         int totalMonsNOT = 0;
 
         while (true) {
+            srand(time(0));
             int chel = rand() % RESIDENTS_COUNT;
             std::cout << "\nchel = " << chel << "\n";
 
@@ -297,7 +298,7 @@ public:
                     int residentIndex = findResidentById(residents, visitor.getId());
                     if (residentIndex != -1) {
                         f = 1;
-                        callResident(getResidentPtr(residentIndex), f); // Звонок настоящему жильцу
+                        callResident(getResidentPtr(chel), f); // Звонок настоящему жильцу
                     }
                     else {
                         printf("Не удалось найти жильца с ID %s.\n", visitor.getId().c_str());
