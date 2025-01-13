@@ -1,24 +1,17 @@
-﻿#define _CRT_SECURE_NO_WARNINGS 
-/*#include <windows.h>
+#define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
-#include <fstream>*/
-#include <cstring> 
-#include <cstdlib> 
-/*const int MAX_NAME_LENGTH = 50;
-const int MAX_APPEARANCE_LENGTH = 50;
-const int MAX_PHONE_LENGTH = 15;
-const int RESIDENTS_COUNT = 5;
-const char* FILENAME = "residents2.txt";
-const char* RESULT_FILENAME = "results2.txt";*/
-#include <iostream> 
-#include <fstream> 
-#include <string> 
-#include <cstdlib> 
-#include <ctime> 
-#include <windows.h> 
+#include <fstream>
+#include <string>
+#include <vector>
+#include <stdexcept>
+#include <cstdlib>
+#include <ctime>
+#include <windows.h>
+
 const int RESIDENTS_COUNT = 5;
 const char* FILENAME = "residents2.txt";
 const char* RESULT_FILENAME = "results2.txt";
+
 class Appearance {
 private:
     std::string hairColor;
@@ -42,23 +35,27 @@ public:
 };
 
 class Resident {
-private:
+protected: // Используем protected для доступа в производных классах
     std::string firstName;
     std::string lastName;
-    std::string id; // Идентификационный номер 
+    std::string id; // Идентификационный номер
     Appearance appearance;
     std::string phone;
 
 public:
     Resident() : firstName("Unknown"), lastName("Unknown"), id("00"), phone("Unknown") {}
 
-    void setResident(const std::string& first, const std::string& last, const std::string& idNum, const std::string& hair,
-        const std::string& cloth, const std::string& phoneNum) {
+    void setResident(const std::string& first, const std::string& last, const std::string& idNum,
+        const std::string& hair, const std::string& cloth, const std::string& phoneNum) {
         firstName = first;
         lastName = last;
         id = idNum;
         appearance.setAppearance(hair, cloth);
         phone = phoneNum;
+    }
+
+    virtual void displayInfo() const { // Виртуальная функция
+        std::cout << "Resident Info: " << firstName << " " << lastName << ", ID: " << id << ", Phone: " << phone << "\n";
     }
 
     const std::string& getFirstName() const { return firstName; }
@@ -67,13 +64,7 @@ public:
     const std::string& getPhone() const { return phone; }
     const Appearance& getAppearance() const { return appearance; }
 
-    // Пример использования оператора this 
-    void displayInfo() const {
-        std::cout << "Resident Info: " << this->firstName << " " << this->lastName << ", ID: " << this->id << ", Phone: 
-            " << this->phone << "\n"; 
-    }
-
-    // Перегрузка оператора '+' 
+    // Перегрузка оператора '+'
     Resident operator+(const Resident& other) const {
         Resident newResident;
         newResident.firstName = this->firstName + " & " + other.firstName;
@@ -83,17 +74,54 @@ public:
         return newResident;
     }
 
-    // Префиксный оператор '++' 
+    // Префиксный оператор '++'
     Resident& operator++() {
         this->id = std::to_string(std::stoi(this->id) + 1);
         return *this;
     }
 
-    // Постфиксный оператор '++' 
+    // Постфиксный оператор '++'
     Resident operator++(int) {
         Resident temp = *this;
-        ++(*this); // Используем префиксный оператор 
+        ++(*this); // Используем префиксный оператор
         return temp;
+    }
+
+    // Перегрузка оператора присваивания
+    Resident& operator=(const Resident& other) {
+        if (this != &other) {
+            firstName = other.firstName;
+            lastName = other.lastName;
+            id = other.id;
+            phone = other.phone;
+            appearance = other.appearance;
+        }
+        return *this;
+    }
+
+    // Дружественная функция
+    friend std::ostream& operator<<(std::ostream& os, const Resident& resident) {
+        os << "Resident Info: " << resident.firstName << " " << resident.lastName
+            << ", ID: " << resident.id << ", Phone: " << resident.phone;
+        return os;
+    }
+};
+
+class VIPResident : public Resident {
+private:
+    std::string vipBenefits;
+
+public:
+    VIPResident(const std::string& first, const std::string& last, const std::string& idNum,
+        const std::string& hair, const std::string& cloth, const std::string& phoneNum, const std::string& benefits)
+        : Resident() {
+        setResident(first, last, idNum, hair, cloth, phoneNum);
+        vipBenefits = benefits;
+    }
+
+    void displayInfo() const override {
+        Resident::displayInfo(); // Вызов метода базового класса
+        std::cout << "VIP Benefits: " << vipBenefits << "\n";
     }
 };
 
@@ -107,8 +135,7 @@ private:
 public:
     VisitorPass() : firstName("Unknown"), lastName("Unknown"), id("00") {}
 
-    void setVisitor(const std::string& first, const std::string& last, const std::string& idNum, const std::string& hair, const
-        std::string& cloth) {
+    void setVisitor(const std::string& first, const std::string& last, const std::string& idNum, const std::string& hair, const std::string& cloth) {
         firstName = first;
         lastName = last;
         id = idNum;
@@ -120,12 +147,6 @@ public:
     const std::string& getId() const { return id; }
     const Appearance& getAppearance() const { return appearance; }
 };
-
-// Дружественная функция 
-void displayResidentDetails(const Resident& resident) {
-    std::cout << "Дружественная функция: ";
-    resident.displayInfo(); // Используем метод displayInfo 
-}
 
 class CheckResult {
 public:
@@ -139,33 +160,31 @@ public:
 class Game {
 private:
     Resident residents[RESIDENTS_COUNT];
-    static int residentCount; // Статическое поле для количества жильцов 
+    static int residentCount; // Статическое поле для количества жильцов
 
 public:
     Game() {
-        residentCount = 0; // Инициализация статического поля 
+        residentCount = 0; // Инициализация статического поля
         try {
             initializeResidents(residents);
         }
         catch (const std::runtime_error& e) {
-            std::cerr << "Ошибка: " << e.what() << std::endl; // Обработка исключения 
+            std::cerr << "Ошибка: " << e.what() << std::endl; // Обработка исключения
             exit(1);
         }
     }
 
-    static void initializeResidents(Resident* residents) { // Статический метод 
+    static void initializeResidents(Resident* residents) { // Статический метод
         std::ifstream file(FILENAME);
         if (!file) {
-            throw std::runtime_error("Не удалось открыть файл жильцов."); // Генерация исключения 
-            exit(1);
+            throw std::runtime_error("Не удалось открыть файл жильцов."); // Генерация исключения
         }
 
         while (true) {
             std::string first, last, id, hair, cloth, phone;
             if (!(file >> first >> last >> id >> hair >> cloth >> phone)) {
-                if (file.eof()) break; // Достигнут конец файла 
+                if (file.eof()) break; // Достигнут конец файла
                 throw std::runtime_error("Ошибка чтения данных из файла.");
-                exit(1);
             }
             residents[residentCount].setResident(first, last, id, hair, cloth, phone);
             residentCount++;
@@ -197,42 +216,35 @@ public:
     CheckResult checkVisitor(Resident* residents, VisitorPass visitor, int chel) {
         CheckResult result;
 
-        int i = chel;
         int a = 0;
-        if (residents[i].getFirstName() != visitor.getFirstName()) {
+        if (residents[chel].getFirstName() != visitor.getFirstName()) {
             result.discrepancyReason = "Неправильное имя";
             a++;
         }
-        else if (residents[i].getLastName() != visitor.getLastName()) {
+        else if (residents[chel].getLastName() != visitor.getLastName()) {
             result.discrepancyReason = "Неправильная фамилия";
             a++;
         }
-        else if (residents[i].getId() != visitor.getId()) {
+        else if (residents[chel].getId() != visitor.getId()) {
             result.discrepancyReason = "Неправильный id";
             a++;
         }
-        else if (residents[i].getAppearance().getHairColor() != visitor.getAppearance().getHairColor()) {
+        else if (residents[chel].getAppearance().getHairColor() != visitor.getAppearance().getHairColor()) {
             result.discrepancyReason = "Неправильный цвет волос";
             a++;
         }
-        else if (residents[i].getAppearance().getClothes() != visitor.getAppearance().getClothes()) {
+        else if (residents[chel].getAppearance().getClothes() != visitor.getAppearance().getClothes()) {
             result.discrepancyReason = "Неправильная одежда";
             a++;
         }
-        if (a == 0) {
-            result.isMatch = 1;
-            return result;
-        }
-        else result.isMatch = 0;
+        result.isMatch = (a == 0) ? 1 : 0;
         return result;
     }
 
-    // Метод, возвращающий ссылку на Resident 
     Resident& getResident(int index) {
         return residents[index];
     }
 
-    // Метод, возвращающий указатель на Resident 
     Resident* getResidentPtr(int index) {
         return &residents[index];
     }
@@ -256,7 +268,7 @@ public:
             int chel = rand() % RESIDENTS_COUNT;
             std::cout << "\nchel = " << chel << "\n";
 
-            // Ввод данных пришедшего жильца 
+            // Ввод данных пришедшего жильца
             inputVisitorPass(visitor);
 
             char prop, zvon;
@@ -266,7 +278,7 @@ public:
                 std::cout << "Данные совпадают. Допуск разрешён.\n";
                 std::cout << "\nВы хотите позвонить в квартиру жильца?(y/n)\n";
                 std::cin >> zvon;
-                if (zvon == 'y' || zvon == 'Y') callResident(getResidentPtr(chel), f); // Звонок настоящему жильцу 
+                if (zvon == 'y' || zvon == 'Y') callResident(getResidentPtr(chel), f); // Звонок настоящему жильцу
                 std::cout << "Вы хотите его пропустить? (y/n)\n";
                 std::cin >> prop;
                 if (prop == 'y' || prop == 'Y') {
@@ -277,16 +289,15 @@ public:
                 }
             }
             else {
-                std::cout << "\nДанные не совпадают. Возможно, это монстр-двойник! Причина: " <<
-                    result.discrepancyReason << "\n";
+                std::cout << "\nДанные не совпадают. Возможно, это монстр-двойник! Причина: " << result.discrepancyReason << "\n";
                 std::cout << "\nВы хотите позвонить в квартиру жильца?(y/n)\n";
                 std::cin >> zvon;
                 if (zvon == 'y' || zvon == 'Y') {
-                    // Попробуем найти жильца по ID 
+                    // Попробуем найти жильца по ID
                     int residentIndex = findResidentById(residents, visitor.getId());
                     if (residentIndex != -1) {
                         f = 1;
-                        callResident(getResidentPtr(residentIndex), f); // Звонок настоящему жильцу 
+                        callResident(getResidentPtr(residentIndex), f); // Звонок настоящему жильцу
                     }
                     else {
                         printf("Не удалось найти жильца с ID %s.\n", visitor.getId().c_str());
@@ -317,6 +328,7 @@ public:
                 break;
             }
         }
+
         printf("\nРезультаты этой игры: \n");
         printf("Настоящих жильцов пропущено: %d\n", totalActualResidents);
         printf("Монстров-двойников пропущено: %d\n", totalMonsters);
@@ -330,92 +342,54 @@ public:
 
         fclose(resultFile);
         std::cout << "Результаты проверки записаны в файл results.txt\n";
-
-        // Чтение результатов 
-        char rec;
-        std::cout << "\nХотите узнать рекорды за всё время?(y/n)\n";
-        std::cin >> rec;
-        if (rec == 'y' || rec == 'Y') readResults();
     }
+
 private:
     void callResident(const Resident* resident, int f) {
         printf("Звонок на номер: %s\n", resident->getPhone().c_str());
-        // Симуляция звонка 
+        // Симуляция звонка
         for (int i = 0; i < 3; ++i) {
             std::cout << "Звонок...\n";
-            Sleep(1000); // Задержка 1 секунда 
+            Sleep(1000); // Задержка 1 секунда
         }
         if (f == 1) {
-            std::cout << "Ответ: Я дома!\n"; // Двойник 
+            std::cout << "Ответ: Я дома!\n"; // Двойник
         }
         else {
-            std::cout << "Ответа нет.\n"; // Настоящий житель не отвечает 
+            std::cout << "Ответа нет.\n"; // Настоящий житель не отвечает
         }
     }
 
-    // Функция для поиска жильца по ID 
+    // Функция для поиска жильца по ID
     int findResidentById(const Resident residents[], const std::string& id) {
         for (int i = 0; i < RESIDENTS_COUNT; i++) {
             if (residents[i].getId() == id) {
-                return i; // Возвращаем индекс жильца с совпадающим ID 
+                return i; // Возвращаем индекс жильца с совпадающим ID
             }
         }
         return -1; // Нет совпадения  
     }
-
-    void readResults() {
-        FILE* resultFile1 = fopen(RESULT_FILENAME, "r");
-        if (resultFile1 == NULL) {
-            std::cout << "Не удалось открыть файл для чтения.\n";
-            return;
-        }
-        char s[40];
-        int A[80];
-        int i = 0;
-        while (fscanf(resultFile1, "%[^:]: %d\n", s, &A[i]) != EOF) {
-            i++;
-        }
-        fclose(resultFile1);
-
-        // Обработка результатов 
-        int itogI = i;
-        i = 0;
-        int itog1 = A[0], itog2 = A[1], itog3 = A[2], itog4 = A[3];
-        while (i < (itogI - 1)) {
-            if (A[i + 4] > itog1) itog1 = A[i + 4];
-            i++;
-            if (A[i + 4] > itog2) itog2 = A[i + 4];
-            i++;
-            if (A[i + 4] > itog3) itog3 = A[i + 4];
-            i++;
-            if (A[i + 4] > itog4) itog4 = A[i + 4];
-            i++;
-        }
-        std::cout << "\nРекорд пропускания настоящих жильцов: " << itog1 << ".\n";
-        std::cout << "Рекорд пропускания монстров-двойников: " << itog2 << ".\n";
-        std::cout << "Больше всего не пропущенных настоящих жильцов: " << itog3 << ".\n";
-        std::cout << "Больше всего не пропущенных монстров-двойников: " << itog4 << ".\n";
-    }
 };
 
-// Инициализация статического поля 
+// Инициализация статического поля
 int Game::residentCount = 0;
+
 int main() {
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
     Game game;
     game.run();
-    // Демонстрация перегрузки операторов 
+
+    // Демонстрация перегрузки операторов
     Resident resident1, resident2;
     resident1.setResident("John", "Doe", "01", "Brown", "Casual", "123456789");
     resident2.setResident("Jane", "Smith", "02", "Blonde", "Formal", "987654321");
-    Resident combinedResident = resident1 + resident2; // Используем перегруженный оператор '+' 
-    combinedResident.displayInfo();
-    ++combinedResident; // Применяем префиксный оператор '++' 
-    combinedResident.displayInfo();
-    combinedResident++; // Применяем постфиксный оператор '++' 
-    combinedResident.displayInfo();
-    // Используем дружественную функцию 
-    displayResidentDetails(resident1);
+    Resident combinedResident = resident1 + resident2; // Используем перегруженный оператор '+'
+    std::cout << combinedResident; // Используем перегруженный оператор '<<'
+    ++combinedResident; // Применяем префиксный оператор '++'
+    std::cout << combinedResident;
+    combinedResident++; // Применяем постфиксный оператор '++'
+    std::cout << combinedResident;
+
     return 0;
 }
