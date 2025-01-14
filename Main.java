@@ -1,6 +1,3 @@
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-
 import java.io.*;
 import java.util.*;
 
@@ -40,12 +37,11 @@ class Appearance {
     }
 }
 
-class Resident {
-    private String firstName;
-    private String lastName;
-    private String id; // Идентификационный номер из 2 цифр
+// Класс Resident
+class Resident extends Person implements Identifiable, Cloneable {
+    protected String id; // Идентификационный номер из 2 цифр
+    protected String phone; // Модификатор protected
     private Appearance appearance;
-    private String phone;
 
     public Resident() {
         this.firstName = "Unknown";
@@ -68,6 +64,21 @@ class Resident {
     public String getId() { return id; }
     public String getPhone() { return phone; }
     public Appearance getAppearance() { return appearance; }
+
+    @Override
+    public String toString() {
+        return "Resident: " + firstName + " " + lastName + ", ID: " + id + ", Phone: " + phone;
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone(); // Мелкое клонирование
+    }
+
+    @Override
+    public void display() {
+        System.out.println(this.toString());
+    }
 }
 
 // Производный класс VIPResident
@@ -84,11 +95,19 @@ class VIPResident extends Resident {
         return vipPhone;
     }
 
+    @Override
+    public String toString() {
+        return super.toString() + ", VIP Phone: " + vipPhone;
+    }
+
+    @Override
+    public void display() {
+        System.out.println(this.toString());
+    }
 }
 
-class VisitorPass {
-    private String firstName;
-    private String lastName;
+// Класс VisitorPass
+class VisitorPass extends Person implements Identifiable {
     private String id;
     private Appearance appearance;
 
@@ -110,8 +129,14 @@ class VisitorPass {
     public String getLastName() { return lastName; }
     public String getId() { return id; }
     public Appearance getAppearance() { return appearance; }
+
+    @Override
+    public void display() {
+        System.out.println("Visitor: " + firstName + " " + lastName + ", ID: " + id);
+    }
 }
 
+// Класс CheckResult
 class CheckResult {
     public Resident resident;
     public int isMatch;
@@ -123,6 +148,20 @@ class CheckResult {
     }
 }
 
+// Шаблонный класс Container
+class Container<T> {
+    private List<T> items = new ArrayList<>();
+
+    public void addItem(T item) {
+        items.add(item);
+    }
+
+    public T getItem(int index) {
+        return items.get(index);
+    }
+}
+
+// Класс Game
 class Game {
     private static final int RESIDENTS_COUNT = 5;
     private Resident[] residents;
@@ -156,7 +195,7 @@ class Game {
             System.err.println(e.getMessage());
             System.exit(1);
         }
-        if(residentCount==0){
+        if (residentCount == 0) {
             System.out.println("Ой. Похоже, что в этом доме ещё никто не живёт!");
             System.exit(1);
         }
@@ -190,7 +229,6 @@ class Game {
             result.discrepancyReason = "Неправильный id";
         } else if (!resident.getAppearance().getHairColor().equals(visitor.getAppearance().getHairColor())) {
             result.discrepancyReason = "Неправильный цвет волос";
-
         } else if (!resident.getAppearance().getClothes().equals(visitor.getAppearance().getClothes())) {
             result.discrepancyReason = "Неправильная одежда";
         } else {
@@ -225,12 +263,12 @@ class Game {
                     System.out.println("Данные совпадают. Допуск разрешён.");
                     System.out.print("Вы хотите позвонить в квартиру жильца? (y/n): ");
                     char zvon = scanner.next().charAt(0);
-                    if (zvon == 'y'|| zvon == 'Y') {
+                    if (zvon == 'y' || zvon == 'Y') {
                         callResident(residents[chel], f);
                     }
                     System.out.print("Вы хотите его пропустить? (y/n): ");
                     char prop = scanner.next().charAt(0);
-                    if (prop == 'y'|| prop == 'Y') {
+                    if (prop == 'y' || prop == 'Y') {
                         totalActualResidents++;
                     } else {
                         totalActResNOT++;
@@ -239,7 +277,7 @@ class Game {
                     System.out.println("Данные не совпадают. Возможно, это монстр-двойник! Причина: " + result.discrepancyReason);
                     System.out.print("Вы хотите позвонить в квартиру жильца? (y/n): ");
                     char zvon = scanner.next().charAt(0);
-                    if (zvon == 'y'|| zvon == 'Y') {
+                    if (zvon == 'y' || zvon == 'Y') {
                         int residentIndex = findResidentById(visitor.getId());
                         if (residentIndex != -1) {
                             f = 1;
@@ -250,7 +288,7 @@ class Game {
                     }
                     System.out.print("Вы хотите его пропустить? (y/n): ");
                     char prop = scanner.next().charAt(0);
-                    if (prop == 'y'|| prop == 'Y') {
+                    if (prop == 'y' || prop == 'Y') {
                         totalMonsters++;
                         System.out.println("Вы убиты! Game over!");
                         break;
@@ -309,10 +347,9 @@ class Game {
                 Thread.currentThread().interrupt();
             }
         }
-        if(f == 1){
+        if (f == 1) {
             System.out.println("Ответ: Я дома!");
-        }
-        else {
+        } else {
             System.out.println("Ответа нет.");
         }
     }
@@ -326,14 +363,14 @@ class Game {
         return -1; // Нет совпадения
     }
 
-    private void readResults(){
+    private void readResults() {
         int[] A = new int[401];
         int i = 0;
         // Блок try
         try (Scanner scanner = new Scanner(new File("results2.txt"))) {
             while (scanner.hasNextLine()) {
                 String[] s = scanner.nextLine().split(": ");
-                A[i] = Integer.parseInt (s[1]);
+                A[i] = Integer.parseInt(s[1]);
                 i++;
             }
         } // Блок catch
@@ -342,7 +379,7 @@ class Game {
             System.exit(1);
         }
         int ItogI = i;
-        i=0;
+        i = 0;
         int itog1 = A[0], itog2 = A[1], itog3 = A[2], itog4 = A[3];
         while (i < (ItogI - 1)) {
             if (A[i + 4] > itog1) itog1 = A[i + 4];
